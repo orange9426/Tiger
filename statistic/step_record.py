@@ -1,4 +1,6 @@
-import numpy as np
+from util.console import console
+
+module = 'STEPRECORD'
 
 
 class StepRecord(object):
@@ -18,15 +20,8 @@ class StepRecord(object):
         self.next_state = None
         self.is_terminal = False
 
-    def print_step_record(self):
-        print("------- Step Record --------")
-        print("Action: ", end=' ')
-        self.action.print_action()
-        print("Observation: ", end=' ')
-        self.obs.print_observation()
-        print("Reward: ", end=' ')
-        print(self.reward)
-        print("Next state: ", end=' ')
-        self.next_state.print_state()
-        print("Is terminal: ", end=' ')
-        print(self.is_terminal)
+    def show(self):
+        console(3, module, "State: " + self.state.to_string())
+        console(3, module, "Action: " + self.action.to_string())
+        console(3, module, "Observation: " + self.obs.to_string())
+        console(3, module, "Reward: " + str(self.reward))

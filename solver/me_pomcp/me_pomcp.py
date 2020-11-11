@@ -1,18 +1,18 @@
 from statistic.record_history import RecordHistory
 from statistic.step_record import StepRecord
 from solver.solver import Solver
-from solver.pomcp.obs_node import ObservationNode
-from solver.pomcp.action_node import ActionNode
+from solver.me_pomcp.obs_node import ObservationNode
+from solver.me_pomcp.action_node import ActionNode
 from util.console import console
 from util.divider import print_divider
 import numpy as np
 
-module = "POMCP"
+module = "ME-POMCP"
 
 
-class POMCP(Solver):
+class ME_POMCP(Solver):
     """
-    Solver: POMCP
+    Solver: ME-POMCP
     """
 
     def __init__(self, args):
@@ -39,11 +39,13 @@ class POMCP(Solver):
         # Max depth for a DFS of the belief search tree in MCTS
         self.max_depth = args['max_depth']
 
-        # Coefficient for UCB algorithm used by MCTS
-        self.uct_c = args['uct_coefficient']
+        # Parameter tau of softmax policies
+        self.me_tau = args['me_tau']
+
+        # Parameter epsilon of softmax policies
+        self.me_epsilon = args['me_epsilon']
 
         # Function pointer
-        self.child_selection_fn = ActionNode.uct_value
         self.evaluation_fn = self._rollout
         self.rollout_policy = self._random_policy
 
@@ -57,7 +59,7 @@ class POMCP(Solver):
         state = env.new_initial_state()
         obs = state.initial_obs()
 
-        # Set root node and the corresponding particle bin
+        # Set the root node and the corresponding particle bin
         root = ObservationNode(obs, depth=0)
         for _ in range(self.n_start_states):
             particle = env.new_initial_state()
@@ -112,8 +114,16 @@ class POMCP(Solver):
                 obs_node.particle_bin.append(step_record.next_state)
 
                 action_node.visit_count += 1
-                ev_return = step_record.reward + self.discount * ev_return
-                action_node.total_reward += ev_return
+                if not obs_node.children:
+                    update_value = step_record.reward + self.discount * ev_return
+                else:
+                    softmax_value = self.me_tau * np.log(
+                        np.sum([
+                            np.exp(c.mean_value / self.me_tau)
+                            for c in obs_node.children
+                        ]))
+                    update_value = step_record.reward + self.discount + softmax_value
+                action_node.total_reward += update_value
 
             root.visit_count += 1
 
@@ -127,12 +137,11 @@ class POMCP(Solver):
         working_state = state
         current_node = root
         depth = root.depth
-
         # Select in the tree until a new node or a terminal node or reaching the max depth
         while current_node.visit_count > 0 and not working_state.is_terminal() \
                 and depth <= root.depth + self.max_depth:
             # For a new node, initialize its children, then choose a child as normal
-            if current_node.visit_count == 0:
+            if not current_node.children:
                 legal_actions = working_state.legal_actions()
                 # Reduce bias from move generation order.
                 np.random.shuffle(legal_actions)
@@ -140,10 +149,9 @@ class POMCP(Solver):
                     ActionNode(action, depth) for action in legal_actions
                 ]
 
-            # Choose a child by maximizing uct value
-            action_child = max(current_node.children,
-                               key=lambda c: self.child_selection_fn(
-                                   c, current_node.visit_count, self.uct_c))
+            # Choose a child by e2w policy
+            action_child = current_node.find_child_by_e2w(
+                self.me_tau, self.me_epsilon)
 
             # Get step result and turn to the action child node
             step_record = env.step(working_state, action_child.action)

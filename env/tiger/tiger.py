@@ -11,7 +11,7 @@ class Tiger(Environment):
     Environment: Tiger
     """
 
-    def __init__(self, listen_coefficient=1):
+    def __init__(self, listen_coefficient=0.75):
         self.name = 'Tiger'
         self.listen_coefficient = listen_coefficient
 

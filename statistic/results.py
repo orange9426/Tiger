@@ -3,14 +3,13 @@ from util.divider import print_divider
 from statistic.statistic import Statistic
 import numpy as np
 
-module = 'results'
+module = 'RESULTS'
 
 
 class Results(object):
     """
     Maintain the statistics for each run
     """
-
     def __init__(self):
         self.time = Statistic('Time')
         self.discounted_return = Statistic('discounted return')
@@ -27,10 +26,10 @@ class Results(object):
 
     def show(self, n_epochs):
         print_divider('large')
-        console(2, module, 'epochs: ' + str(n_epochs))
-        console(2, module, 'ave undiscounted return/epoch: ' + str(self.undiscounted_return.mean) +
-                ' +- ' + str(self.undiscounted_return.std_err()))
-        console(2, module, 'ave discounted return/epoch: ' + str(self.discounted_return.mean) +
-                ' +- ' + str(self.discounted_return.std_err()))
-        console(2, module, 'ave time/epoch: ' + str(self.time.mean))
+        console(2, module, 'epochs: %d' % n_epochs)
+        console(2, module, 'ave undiscounted return/epoch: %.2f +- %.2f' %
+            (self.undiscounted_return.mean, self.undiscounted_return.std_err()))
+        console(2, module, 'ave discounted return/epoch: %.2f +- %.2f' %
+            (self.discounted_return.mean, self.discounted_return.std_err()))
+        console(2, module, 'ave time/epoch: %.2f' % self.time.mean)
         print_divider('medium')
