@@ -1,8 +1,7 @@
-from log import logger
+from statistic.results import Results
 from util.console import console
 from util.divider import print_divider
-from statistic.results import Results
-from statistic.record_history import RecordHistory
+
 import logging
 import time
 import tqdm
@@ -22,7 +21,7 @@ def run(env, solver, args):
         # Show epochs progress
         if not args['quiet']:
             print_divider('medium')
-            console(2, module, "Epoch: " + str(epoch))
+            console(2, module, "Epoch: " + str(epoch + 1))
 
         epoch_start = time.time()
 
@@ -62,24 +61,24 @@ def _log_result(result, args):
     if args['solver'] == 'POMCP':
         logger.info('epochs: %d' % args['n_epochs'] + '\t' +
                     'simulations: %d' % args['n_sims'] + '\t' +
-                    'uct_c: %.2f' % args['uct_coefficient'] + '\t' +
-                    'ave undiscounted return: %.2f +- %.2f' %
+                    'uct_c: %.3f' % args['uct_coefficient'] + '\t' +
+                    'ave undiscounted return: %.3f +- %.3f' %
                     (result.undiscounted_return.mean,
                      result.undiscounted_return.std_err()) + '\t' +
-                    'ave discounted return: %.2f +- %.2f' %
+                    'ave discounted return: %.3f +- %.3f' %
                     (result.discounted_return.mean,
                      result.discounted_return.std_err()) + '\t' +
-                    'ave time/epoch: %.2f' % result.time.mean)
+                    'ave time/epoch: %.3f' % result.time.mean)
 
     elif args['solver'] == 'ME-POMCP':
         logger.info('epochs: %d' % args['n_epochs'] + '\t' +
                     'simulations: %d' % args['n_sims'] + '\t' +
-                    'me_tau: %.2f' % args['me_tau'] + '\t' +
-                    'me_epsilon: %.2f' % args['me_epsilon'] + '\t' +
-                    'ave undiscounted return: %.2f +- %.2f' %
+                    'me_tau: %.3f' % args['me_tau'] + '\t' +
+                    'me_epsilon: %.3f' % args['me_epsilon'] + '\t' +
+                    'ave undiscounted return: %.3f +- %.3f' %
                     (result.undiscounted_return.mean,
                      result.undiscounted_return.std_err()) + '\t' +
-                    'ave discounted return: %.2f +- %.2f' %
+                    'ave discounted return: %.3f +- %.3f' %
                     (result.discounted_return.mean,
                      result.discounted_return.std_err()) + '\t' +
-                    'ave time/epoch: %.2f' % result.time.mean)
+                    'ave time/epoch: %.3f' % result.time.mean)

@@ -1,15 +1,16 @@
 class Action(object):
-    """Action object of env: Tiger.
+    """Action object of env: Kuhn Poker.
 
-    An action of Tiger is encoded as a single scalar that is
-    0, 1, 2 when act left, right, listen respetively.
+    An action of Kuhn Poker is encoded as a single scalar that is
+    0, 1 when act pass, bet respetively.
     """
 
-    __name_dict = {0: 'left', 1: 'right', 2: 'listen'}
+    __name_dict = {0: 'pass', 1: 'bet'}
 
-    def __init__(self, encode):
+    def __init__(self, encode, player=0):
         self.encode = encode
         self.name = Action.__name_dict[encode]
+        self.player = player
 
     def to_string(self):
         return self.name

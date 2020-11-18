@@ -1,10 +1,13 @@
-from statistic.record_history import RecordHistory
+from statistic.record_history import History
 from statistic.step_record import StepRecord
+
 from solver.solver import Solver
 from solver.pomcp.obs_node import ObservationNode
 from solver.pomcp.action_node import ActionNode
+
 from util.console import console
 from util.divider import print_divider
+
 import numpy as np
 
 module = "POMCP"
@@ -65,8 +68,7 @@ class POMCP(Solver):
                 particle = env.new_initial_state()
             root.particle_bin.append(particle)
 
-        history = RecordHistory()
-        step = 0
+        history = History()
 
         # Solve the game by step until a terminal state
         while not state.is_terminal():
@@ -123,7 +125,7 @@ class POMCP(Solver):
         """Select nodes according to the tree policy in the search tree."""
 
         visit_path = []
-        record_history = RecordHistory()
+        record_history = History()
         working_state = state
         current_node = root
         depth = root.depth
@@ -132,7 +134,7 @@ class POMCP(Solver):
         while current_node.visit_count > 0 and not working_state.is_terminal() \
                 and depth <= root.depth + self.max_depth:
             # For a new node, initialize its children, then choose a child as normal
-            if current_node.visit_count == 0:
+            if not current_node.children:
                 legal_actions = working_state.legal_actions()
                 # Reduce bias from move generation order.
                 np.random.shuffle(legal_actions)
@@ -168,7 +170,7 @@ class POMCP(Solver):
     def _rollout(self, state, env):
         """Rollout method to evaluate a state."""
 
-        history = RecordHistory()
+        history = History()
 
         # Rollout to terminal state and return the discounted reward
         while not state.is_terminal():

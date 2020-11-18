@@ -2,6 +2,7 @@ from log import logger
 from env.init_env import init_env
 from solver.init_solver import init_solver
 from run import run
+
 import argparse
 import numpy as np
 import time
@@ -12,9 +13,9 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Set the run parameters.')
 
     # Argments for model
-    parser.add_argument('--env', default='Tiger', type=str,
+    parser.add_argument('--env', default='Kuhn Poker', type=str,
                         help='Specify the env to solve {Tiger}')
-    parser.add_argument('--solver', default='ME-POMCP', type=str,
+    parser.add_argument('--solver', default='POMCP', type=str,
                         help='Specify the solver to use {POMCP}')
     parser.add_argument('--seed', default=int(time.time()), type=int,
                         help='Specify the random seed for numpy.random')
@@ -22,16 +23,8 @@ def parse_args():
                         help='Specify the discount factor (default=1)')
     parser.add_argument('--n_epochs', default=10, type=int,
                         help='Num of epochs of the experiment to conduct')
-    # parser.add_argument('--max_steps', default=200, type=int,
-    #                     help='Max num of steps per trial/episode/trajectory/epoch')
-    # parser.add_argument('--timeout', default=3600, type=int,
-    #                     help='Max num of sec the experiment should run before timeout')
     parser.add_argument('--quiet', dest='quiet', action='store_true',
                         help='Flag of whether to print step messages')
-    # parser.add_argument('--preferred_actions', dest='preferred_actions', action='store_true',
-    #                     help='For RockSample, specify whether smart actions should be used')
-    # parser.add_argument('--save', dest='save', action='store_true',
-    #                     help='Pickle the weights/alpha vectors')
 
     # Arguments for POMCP
     parser.add_argument('--n_sims', default=100, type=int,
@@ -48,13 +41,11 @@ def parse_args():
                         help='Coefficient for UCT algorithm used by MCTS')
 
     # Arguments for ME-POMCP
-    parser.add_argument('--me_tau', default=0.5, type=float,
+    parser.add_argument('--me_tau', default=1, type=float,
                         help='Tau for Maximum Entropy algorithm used by MCTS')
     parser.add_argument('--me_epsilon', default=0.5, type=float,
                         help='Epsilon for Maximum Entropy algorithm used by MCTS')
 
-    parser.set_defaults(preferred_actions=False)
-    parser.set_defaults(save=False)
     parser.set_defaults(quiet=False)
 
     # Cast to a dictionary

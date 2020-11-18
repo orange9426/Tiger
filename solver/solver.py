@@ -2,7 +2,7 @@ import abc
 
 
 class Solver(object):
-    """Abstract class of solver."""
+    """Abstract class of all kinds of solvers."""
 
     @abc.abstractmethod
     def reset_for_epoch(self):
