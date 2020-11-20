@@ -12,13 +12,14 @@ class StepRecord(object):
     or not the recording next state is a terminal state.
     """
 
-    def __init__(self):
-        self.state = None
-        self.action = None
-        self.next_state = None
-        self.obs = None
-        self.reward = 0
-        self.is_terminal = False
+    def __init__(self, state=None, action=None, next_state=None,
+                 obs=None, reward=0, is_terminal=False):
+        self.state = state
+        self.action = action
+        self.next_state = next_state
+        self.obs = obs
+        self.reward = reward
+        self.is_terminal = is_terminal
 
     def show(self):
         console(3, module, 'State: ' + self.state.to_string())

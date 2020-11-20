@@ -8,3 +8,7 @@ __pycache__/
 
 # Jupyter Notebook
 .ipynb_checkpoints
+debug.ipynb
+
+# VS Code
+.vscode/

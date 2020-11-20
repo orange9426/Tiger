@@ -2,15 +2,16 @@ class PrivateObservation(object):
     """Private observation object of env: Kuhn Poker.
 
     A private observation of Kuhn Poker is encoded as a single scalar
-    that indicates the hand of a single player.
+    that indicates the hand of a single player, and when it is -1, it
+    means that the hand is unknown.
     """
 
-    __name_dict = {0: 'J', 1: 'Q', 2: 'K'}
+    __name_dict = {0: 'J', 1: 'Q', 2: 'K', -1: '?'}
 
-    def __init__(self, encode, player=0):
+    def __init__(self, encode, player):
         self.encode = encode
-        self.name = PrivateObservation.__name_dict[encode]
         self.player = player
+        self.name = PrivateObservation.__name_dict[encode]
 
     def to_string(self):
         return self.name

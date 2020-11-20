@@ -1,3 +1,4 @@
+from statistic.step_record import StepRecord
 import numpy as np
 
 
@@ -9,8 +10,16 @@ class History(list):
     observations every time the information state is obtained from the history.
     """
 
-    def __init__(self, a=[]):
+    def __init__(self, a=[], env=None):
         super().__init__(a)
+        self.env = env
+
+    def child(self, action):
+        """Get the child history given an action."""
+        step_record = self.env.step(self[-1].next_state, action)
+        history = History([record for record in self[:]], self.env)
+        history.append(step_record)
+        return history
 
     def get_info_state(self):
         """Get the info states of two players corresponding to the history."""
@@ -18,11 +27,13 @@ class History(list):
         info_state = (InformationState(player=0), InformationState(player=1))
 
         for player in [0, 1]:
-            # Get the initial obs tuple: (O_priv_0, O_priv_1, O_pub)
-            initial_obs = self[0].state.initial_obs()
-            info_state[player].append((initial_obs[player], initial_obs[-1]))
             for record in self:
-                info_state[player].append(record.action)
+                if record.action:  # not the first record in the history
+                    # Append the action if player is the current player
+                    if record.action.player == player:
+                        info_state[player].append(record.action)
+                    else:
+                        info_state[player].append(None)
                 info_state[player].append((record.obs[player], record.obs[-1]))
 
         return info_state
@@ -32,8 +43,7 @@ class History(list):
 
         public_state = PublicState()
 
-        # Append the initial public observation
-        public_state.append(self[0].state.initial_obs()[-1])
+        # List the public observation
         for record in self:
             public_state.append(record.obs[-1])
 
@@ -57,6 +67,14 @@ class History(list):
             factor *= discount
         return discounted_return
 
+    def to_string(self):
+        # Append the first world state string
+        string = self[0].next_state.to_string() + ' -> '
+
+        string += ' -> '.join(record.action.to_string() + ' -> ' +
+                              record.state.to_string() for record in self[1:])
+        return string
+
     def __eq__(self, other):
         if isinstance(other, self.__class__) and len(self) == len(other):
             return all([x == y for x, y in zip(self, other)])
@@ -69,7 +87,7 @@ class History(list):
 
 class InformationState(list):
     """Represents the node where players make decisions.
-    
+
     This is a sequence of observations and actions of a single player 'i' like
     [O_i^0, a_i^0, O_i^1, a_i^1, ..., O_i^t] in FOGs.
     """
@@ -86,6 +104,17 @@ class InformationState(list):
                 public_state.append(item[-1])
         return public_state
 
+    def to_string(self):
+        def str_fun(item):
+            if isinstance(item, tuple):
+                return '; '.join(x.to_string() for x in item)
+            elif item == None:
+                return 'None'
+            else:
+                return item.to_string()
+
+        return ' -> '.join(map(str_fun, self))
+
     def __eq__(self, other):
         if isinstance(other, self.__class__) and len(self) == len(other):
             return all([x == y for x, y in zip(self, other)])
@@ -101,6 +130,9 @@ class PublicState(list):
 
     def __init__(self, a=[]):
         super().__init__(a)
+
+    def to_string():
+        return ' -> '.join(o.to_string() for o in self)
 
     def __eq__(self, other):
         if isinstance(other, self.__class__) and len(self) == len(other):

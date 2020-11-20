@@ -1,4 +1,5 @@
 from statistic.step_record import StepRecord
+from statistic.record_history import History
 
 from env.env import Environment
 from env.kuhn_poker.kuhn_poker_world_state import WorldState
@@ -14,7 +15,7 @@ class KuhnPoker(Environment):
     """Environment class: Kuhn Poker
 
     Define the Kuhn Poker environment as a FOG.
-    Replace chance nodes with transition probabilities.
+    Replace transition probabilities with chance nodes.
     """
 
     def __init__(self):
@@ -23,32 +24,37 @@ class KuhnPoker(Environment):
         self.name = 'Kuhn Poker'
         self.multi_agent = True
 
-    def new_initial_state(self):
-        """Get a new initial world state by initial world_state distribution."""
+    def initial_state(self):
+        """Get a new initial world state."""
 
-        r = np.random.randint(6)
-        w_encode = [[r % 3, (r % 3 + r // 3 + 1) % 3], [1, 1], 0]
-        return WorldState(w_encode)
+        return WorldState([[-1, -1], [1, 1], -1])
 
-    def initial_states(self):
-        """Return two lists of the initial states and the probability."""
+    def initial_obs(self):
+        """Get new initial observations."""
 
-        states_list = [WorldState([[i, (i + j) % 3], [1, 1], 0])
-                       for i in range(3) for j in range(1, 3)]
-        prob_list = [1 / len(states_list) for x in states_list]
-        return states_list, prob_list
+        return (PrivateObservation(-1, player=0), PrivateObservation(-1, player=0),
+                PublicObservation([1, 1]))
 
-    def get_all_states(self):
-        """Return a list of all possible world states."""
+    def initial_history(self):
+        """Get new initial history with the initial record."""
 
-        initial_states_list, _ = self.initial_states()
-        hands_list = [w.encode[0].copy() for w in initial_states_list]
-        states_list = []
-        for hands in hands_list:
-            states_list += [WorldState([hands, bets, 0]) for bets in [[1, 1], [1, 2]]] \
-                + [WorldState([hands, bets, 1]) for bets in [[1, 1], [2, 1]]]
+        return History([StepRecord(next_state=self.initial_state(),
+                                   obs=self.initial_obs())], self)
 
-        return states_list
+    def get_all_histories(self):
+        """Return a list of all possible histories in the game."""
+
+        history_list = []
+        history_queue = [self.initial_history()]
+
+        while history_queue:
+            history = history_queue.pop(0)
+            history_list.append(history)
+            if not history[-1].is_terminal:
+                history_queue += [history.child(action) for action in
+                                  history[-1].next_state.legal_actions()]
+
+        return history_list
 
     def step(self, world_state, action):
         """Get the step result given a world state and an action."""
@@ -60,29 +66,34 @@ class KuhnPoker(Environment):
 
         # Get next world state and rewards
         w_encode = copy.deepcopy(world_state.encode)
-        if action.encode == 0:  # pass
-            # The game will not end after 'pass' only if at the beginning
-            if w_encode[1] == [1, 1] and w_encode[-1] == 1:
-                w_encode[-1] = 1 - w_encode[-1]  # opponent's turn
-                step_record.reward = 0
-            else:  # the game is over
-                w_encode[-1] = -1  # terminal
-                step_record.is_terminal = True
-                if w_encode[1] == [1, 1]:  # all pass
-                    step_record.reward = 1 if w_encode[0][0] > w_encode[0][1] else -1
+        reward = 0
+        if world_state.is_chance():  # is chance
+            w_encode[0] = copy.deepcopy(action.encode)
+            w_encode[-1] = 0  # player 1's turn
+        else:  # pass
+            if action.encode == 0:  # pass
+                # The game will not end after 'pass' only if at the beginning
+                if w_encode[1] == [1, 1] and w_encode[-1] == 0:
+                    w_encode[-1] = 1 - w_encode[-1]  # opponent's turn
+                else:  # the game is over
+                    w_encode[-1] = -2  # terminal
+                    step_record.is_terminal = True
+                    if w_encode[1] == [1, 1]:  # all pass
+                        reward = 1 if w_encode[0][0] > w_encode[0][1] else -1
+                    else:
+                        # The player who passes will lose
+                        reward = 1 if action.player == 1 else -1
+            else:  # bet
+                w_encode[1][action.player] += 1  # the bet of current player +1
+                # The game will end after 'bet' only if all bet
+                if w_encode[1] == [2, 2]:
+                    w_encode[-1] = -2  # terminal
+                    step_record.is_terminal = True
+                    reward = 2 if w_encode[0][0] > w_encode[0][1] else -2
                 else:
-                    # The player who passes will lose
-                    step_record.reward = 1 if action.player == 1 else -1
-        else:  # bet
-            w_encode[1][action.player] += 1  # the bet of current player +1
-            # The game will end after 'bet' only if all bet
-            if w_encode[1] == [2, 2]:
-                w_encode[-1] = -1  # terminal
-                step_record.is_terminal = True
-                step_record.reward = 2 if w_encode[0][0] > w_encode[0][1] else -2
-            else:
-                w_encode[-1] = 1 - w_encode[-1]  # opponent's turn
+                    w_encode[-1] = 1 - w_encode[-1]  # opponent's turn
         step_record.next_state = WorldState(w_encode)
+        step_record.reward = reward
 
         # Get observation
         # Observations always match the world state
